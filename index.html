@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>VPN Panel</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #121829;
+      --bg-tertiary: #1a2238;
+      --bg-hover: #222d4a;
+      --text-primary: #ffffff;
+      --text-secondary: #8892b0;
+      --text-muted: #5a6580;
+      --accent: #4a9eff;
+      --accent-hover: #6bb0ff;
+      --accent-glow: rgba(74, 158, 255, 0.3);
+      --green: #2ed573;
+      --green-bg: rgba(46, 213, 115, 0.12);
+      --red: #ff4757;
+      --red-bg: rgba(255, 71, 87, 0.12);
+      --yellow: #ffcc00;
+      --yellow-bg: rgba(255, 204, 0, 0.12);
+      --purple: #a855f7;
+      --purple-bg: rgba(168, 85, 247, 0.12);
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(74, 158, 255, 0.3);
+      --radius: 20px;
+      --radius-sm: 14px;
+      --radius-xs: 10px;
+    }
+    
+    body.light {
+      --bg-primary: #f5f7fb;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #eef2f9;
+      --bg-hover: #e4eaf5;
+      --text-primary: #0a0e1a;
+      --text-secondary: #5a6580;
+      --text-muted: #8892b0;
+      --accent: #2b7de9;
+      --accent-hover: #1a6ed8;
+      --accent-glow: rgba(43, 125, 233, 0.2);
+      --green: #22c55e;
+      --green-bg: rgba(34, 197, 94, 0.1);
+      --red: #ef4444;
+      --red-bg: rgba(239, 68, 68, 0.1);
+      --yellow: #eab308;
+      --yellow-bg: rgba(234, 179, 8, 0.1);
+      --purple: #9333ea;
+      --purple-bg: rgba(147, 51, 234, 0.1);
+      --border: rgba(0, 0, 0, 0.06);
+      --border-hover: rgba(43, 125, 233, 0.3);
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background 0.3s, color 0.3s;
+    }
+    
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding-bottom: 90px;
+    }
+    
+    /* HEADER */
+    .header {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(20px);
+      z-index: 100;
+      border-bottom: 1px solid var(--border);
+    }
+    body.light .header { background: rgba(245, 247, 251, 0.85); }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent), #6bb0ff);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+    
+    .logo-icon svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; }
+    
+    .header-btn {
+      width: 38px;
+      height: 38px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .header-btn:active { background: var(--bg-hover); }
+    .header-btn svg { width: 18px; height: 18px; stroke: var(--text-primary); fill: none; stroke-width: 2; }
+    
+    /* PAGES */
+    .page { display: none; padding: 0 20px; }
+    .page.active { display: block; animation: fadeIn 0.3s ease; }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .page-title {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 20px 0 20px;
+      letter-spacing: -0.5px;
+    }
+    
+    /* PROFILE */
+    .profile-card {
+      background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      margin-bottom: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .profile-card::before {
+      content: "";
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+      border-radius: 50%;
+    }
+    
+    .profile-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, var(--accent), #6bb0ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 900;
+      color: white;
+      border: 3px solid var(--bg-secondary);
+      box-shadow: 0 8px 24px var(--accent-glow);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .profile-name {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      position: relative;
+      letter-spacing: -0.5px;
+    }
+    
+    .profile-username {
+      font-size: 14px;
+      color: var(--accent);
+      font-weight: 600;
+      position: relative;
+    }
+    
+    .profile-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent);
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 20px;
+      margin-top: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      position: relative;
+    }
+    
+    .profile-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    
+    .profile-stat {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 12px;
+      text-align: center;
+    }
+    
+    .profile-stat-val {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--accent);
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
+    }
+    
+    .profile-stat-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    /* STATUS CARD */
+    .status-card {
+      background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .status-card::before {
+      content: "";
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+      border-radius: 50%;
+    }
+    
+    .status-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px var(--green-bg);
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
+    .status-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-days {
+      font-size: 40px;
+      font-weight: 900;
+      margin-bottom: 4px;
+      letter-spacing: -1.5px;
+      position: relative;
+    }
+    
+    .status-days-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .status-progress {
+      height: 8px;
+      background: var(--bg-primary);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+      position: relative;
+    }
+    
+    .status-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #6bb0ff);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    .status-progress-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+    }
+    
+    /* BALANCE CARD */
+    .balance-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .balance-info { display: flex; flex-direction: column; gap: 4px; }
+    .balance-label { font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .balance-value { font-size: 28px; font-weight: 900; color: var(--accent); letter-spacing: -1px; }
+    
+    .balance-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: var(--radius-xs);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .balance-btn:active { background: var(--accent-hover); }
+    
+    /* SECTION */
+    .section-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: space-between;
+    }
+    
+    .section-title-text { display: flex; align-items: center; gap: 8px; }
+    .section-title-text::before {
+      content: "";
+      width: 4px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    
+    .section-add-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    
+    /* SUBSCRIPTION CARD */
+    .sub-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .sub-card:active { border-color: var(--border-hover); }
+    
+    .sub-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .sub-name { font-size: 16px; font-weight: 800; }
+    .sub-plan { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    
+    .sub-days {
+      font-size: 13px;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: var(--green-bg);
+      color: var(--green);
+    }
+    .sub-days.expiring { background: var(--yellow-bg); color: var(--yellow); }
+    .sub-days.expired { background: var(--red-bg); color: var(--red); }
+    
+    .sub-key {
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      word-break: break-all;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .sub-key span { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+    .sub-key svg { width: 14px; height: 14px; stroke: var(--accent); fill: none; stroke-width: 2; flex-shrink: 0; }
+    
+    .sub-actions { display: flex; gap: 8px; }
+    
+    .sub-action-btn {
+      flex: 1;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .sub-action-btn:active { background: var(--bg-hover); }
+    .sub-action-btn.danger { color: var(--red); }
+    .sub-action-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+    
+    /* BUTTONS */
+    .btn-primary {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-primary:active { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    
+    .btn-secondary {
+      width: 100%;
+      padding: 16px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .btn-secondary:active { background: var(--bg-hover); }
+    
+    /* PLANS */
+    .plan-card {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .plan-card:active { transform: scale(0.98); }
+    .plan-card.selected { border-color: var(--accent); background: var(--bg-tertiary); }
+    .plan-card.popular { border-color: var(--yellow); }
+    
+    .plan-badge {
+      position: absolute;
+      top: -10px;
+      right: 20px;
+      background: var(--yellow);
+      color: #000;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .plan-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .plan-name { font-size: 17px; font-weight: 800; }
+    .plan-price { font-size: 22px; font-weight: 900; color: var(--accent); letter-spacing: -0.5px; }
+    
+    .plan-features { display: flex; flex-direction: column; gap: 8px; }
+    
+    .plan-feature {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .plan-feature svg { width: 14px; height: 14px; stroke: var(--green); fill: none; stroke-width: 3; flex-shrink: 0; }
+    
+    /* PAYMENT METHODS */
+    .pay-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+    
+    .pay-method {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pay-method:active { transform: scale(0.97); }
+    .pay-method.selected { border-color: var(--accent); background: var(--bg-tertiary); }
+    
+    .pay-icon { font-size: 32px; margin-bottom: 8px; }
+    .pay-name { font-size: 13px; font-weight: 700; }
+    .pay-desc { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+    
+    /* AMOUNT */
+    .amount-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    
+    .amount-btn {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .amount-btn:active { transform: scale(0.97); }
+    .amount-btn.selected { border-color: var(--accent); background: var(--bg-tertiary); color: var(--accent); }
+    
+    /* HISTORY */
+    .history-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .history-info { display: flex; flex-direction: column; gap: 3px; }
+    .history-title { font-size: 14px; font-weight: 700; }
+    .history-date { font-size: 11px; color: var(--text-secondary); }
+    
+    .history-amount { font-size: 15px; font-weight: 800; color: var(--green); }
+    .history-amount.minus { color: var(--red); }
+    
+    /* REFERRAL */
+    .referral-hero {
+      background: linear-gradient(135deg, var(--accent), #6bb0ff);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      margin-bottom: 16px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .referral-hero::before {
+      content: "";
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 180px;
+      height: 180px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+    }
+    
+    .referral-hero::after {
+      content: "";
+      position: absolute;
+      bottom: -40px;
+      left: -40px;
+      width: 120px;
+      height: 120px;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+    }
+    
+    .referral-hero-content { position: relative; z-index: 1; }
+    
+    .referral-hero-icon {
+      width: 56px;
+      height: 56px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+    
+    .referral-hero-title {
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    
+    .referral-hero-text {
+      font-size: 13px;
+      opacity: 0.95;
+      line-height: 1.5;
+    }
+    
+    /* REWARD CHOICE */
+    .reward-choice {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    
+    .reward-title {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    
+    .reward-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    
+    .reward-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    
+    .reward-option {
+      background: var(--bg-tertiary);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .reward-option:active { transform: scale(0.97); }
+    .reward-option.selected { border-color: var(--accent); background: var(--bg-hover); }
+    .reward-option.selected::after {
+      content: "✓";
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+    }
+    
+    .reward-option-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    
+    .reward-option-name {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    
+    .reward-option-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+    
+    .reward-warning {
+      background: var(--yellow-bg);
+      border: 1px solid var(--yellow);
+      border-radius: var(--radius-xs);
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--yellow);
+      font-weight: 600;
+      line-height: 1.4;
+      margin-top: 16px;
+      text-align: center;
+    }
+    
+    /* REFERRAL LINK */
+    .ref-link-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    
+    .ref-link-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    
+    .ref-link-value {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 14px 16px;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--accent);
+      word-break: break-all;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+    .ref-link-value:active { border-color: var(--accent); }
+    .ref-link-value span { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+    .ref-link-value svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2; flex-shrink: 0; }
+    
+    /* REFERRAL STATS */
+    .ref-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .ref-stat {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .ref-stat-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    
+    .ref-stat-val {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--accent);
+      margin-bottom: 4px;
+      letter-spacing: -1px;
+    }
+    
+    .ref-stat-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    /* REFERRAL LIST */
+    .ref-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .ref-item-info { display: flex; align-items: center; gap: 12px; }
+    
+    .ref-item-avatar {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-tertiary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    
+    .ref-item-name { font-size: 14px; font-weight: 700; }
+    .ref-item-date { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    
+    .ref-item-reward {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--green);
+    }
+    
+    /* SETTINGS */
+    .setting-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .setting-label { font-size: 14px; font-weight: 600; }
+    
+    .toggle {
+      width: 48px;
+      height: 28px;
+      background: var(--bg-tertiary);
+      border-radius: 14px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+    .toggle.on { background: var(--accent); }
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .toggle.on::after { transform: translateX(20px); }
+    
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 480px;
+      margin: 0 auto;
+      background: rgba(10, 14, 26, 0.92);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+    body.light .bottom-nav { background: rgba(245, 247, 251, 0.92); }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      padding: 6px 14px;
+      flex: 1;
+    }
+    
+    .nav-item svg { width: 22px; height: 22px; stroke: var(--text-muted); fill: none; stroke-width: 2; transition: stroke 0.2s; }
+    .nav-item span { font-size: 10px; font-weight: 700; color: var(--text-muted); transition: color 0.2s; }
+    .nav-item.active svg { stroke: var(--accent); }
+    .nav-item.active span { color: var(--accent); }
+    
+    /* TOAST */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 1000;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      max-width: 90%;
+      text-align: center;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: var(--green); color: var(--green); }
+    .toast.error { border-color: var(--red); color: var(--red); }
+    
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      animation: scaleIn 0.3s ease;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    
+    .modal-icon { font-size: 48px; margin-bottom: 16px; }
+    .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .modal-text { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 20px; }
+    
+    .modal-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-xs);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .modal-btn:active { background: var(--accent-hover); }
+    
+    .modal-btn-secondary {
+      width: 100%;
+      padding: 14px;
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .modal-btn-danger {
+      width: 100%;
+      padding: 14px;
+      background: var(--red);
+      color: white;
+      border: none;
+      border-radius: var(--radius-xs);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    
+    /* FORM */
+    .form-group { margin-bottom: 14px; text-align: left; }
+    .form-label { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-input {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      color: var(--text-primary);
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    
+    /* QR */
+    .qr-container {
+      background: white;
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      display: inline-block;
+      margin: 16px 0;
+    }
+    .qr-container img { width: 180px; height: 180px; display: block; }
+    
+    /* EMPTY */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+    .empty-icon { font-size: 52px; margin-bottom: 12px; opacity: 0.5; }
+    .empty-text { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .empty-sub { font-size: 13px; }
+    
+    /* CRYPTO */
+    .crypto-box {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .crypto-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .crypto-address {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--accent);
+      word-break: break-all;
+      cursor: pointer;
+      padding: 8px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-box-val { font-size: 24px; font-weight: 900; color: var(--accent); margin-bottom: 4px; letter-spacing: -0.5px; }
+    .stat-box-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- HEADER -->
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        VPN Panel
+      </div>
+      <div class="header-btn" onclick="toggleTheme()">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </div>
+    </div>
+    
+    <!-- ГЛАВНАЯ -->
+    <div class="page active" id="page-home">
+      <div class="status-card">
+        <div class="status-header">
+          <div class="status-dot" id="mainStatusDot"></div>
+          <div class="status-text" id="mainStatusText">Загрузка...</div>
+        </div>
+        <div class="status-days" id="mainStatusDays">0</div>
+        <div class="status-days-label" id="mainStatusLabel">Нет активных подписок</div>
+        <div class="status-progress">
+          <div class="status-progress-bar" id="mainStatusBar" style="width: 0%;"></div>
+        </div>
+        <div class="status-progress-text">
+          <span id="mainStatusLeft">Осталось: 0 дней</span>
+          <span id="mainStatusTotal">Всего: 0</span>
+        </div>
+      </div>
+      
+      <div class="balance-card">
+        <div class="balance-info">
+          <div class="balance-label">Баланс</div>
+          <div class="balance-value" id="balanceValue">0 ₽</div>
+        </div>
+        <button class="balance-btn" onclick="showPage('page-pay')">Пополнить</button>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-box-val" id="statDevices">0</div>
+          <div class="stat-box-label">Устройств</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val" id="statSubs">0</div>
+          <div class="stat-box-label">Подписок</div>
+        </div>
+      </div>
+      
+      <div class="section-title">
+        <div class="section-title-text">Мои подписки</div>
+        <button class="section-add-btn" onclick="showPage('page-subscription')">+ Купить</button>
+      </div>
+      
+      <div id="homeSubsList"></div>
+    </div>
+    
+    <!-- ПРОФИЛЬ -->
+    <div class="page" id="page-profile">
+      <div class="page-title">Профиль</div>
+      
+      <div class="profile-card">
+        <div class="profile-avatar" id="profileAvatar">?</div>
+        <div class="profile-name" id="profileName">Пользователь</div>
+        <div class="profile-username" id="profileUsername">@user</div>
+        <div class="profile-badge">⭐ Premium</div>
+      </div>
+      
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat-val" id="profileStatSubs">0</div>
+          <div class="profile-stat-label">Подписок</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-val" id="profileStatDevices">0</div>
+          <div class="profile-stat-label">Устройств</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-val" id="profileStatRefs">0</div>
+          <div class="profile-stat-label">Рефералов</div>
+        </div>
+      </div>
+      
+      <div class="section-title"><div class="section-title-text">Мои подписки</div></div>
+      <div id="profileSubsList"></div>
+      
+      <div class="section-title"><div class="section-title-text">Действия</div></div>
+      
+      <div class="setting-item" onclick="showPage('page-referral')">
+        <div class="setting-label">👥 Реферальная программа</div>
+        <div style="color: var(--accent); font-size: 13px; font-weight: 700;">Открыть</div>
+      </div>
+      
+      <div class="setting-item" onclick="showPage('page-history')">
+        <div class="setting-label">📊 История операций</div>
+        <div style="color: var(--accent); font-size: 13px; font-weight: 700;">Открыть</div>
+      </div>
+      
+      <div class="setting-item" onclick="showPage('page-settings')">
+        <div class="setting-label">⚙️ Настройки</div>
+        <div style="color: var(--accent); font-size: 13px; font-weight: 700;">Открыть</div>
+      </div>
+    </div>
+    
+    <!-- ПОДПИСКИ -->
+    <div class="page" id="page-subs">
+      <div class="page-title">Мои подписки</div>
+      <div id="subsList"></div>
+      <button class="btn-primary" style="margin-top: 12px;" onclick="showPage('page-subscription')">
+        + Купить новую
+      </button>
+    </div>
+    
+    <!-- КУПИТЬ ПОДПИСКУ -->
+    <div class="page" id="page-subscription">
+      <div class="page-title">Выбор тарифа</div>
+      
+      <div class="plan-card popular" onclick="selectPlan(this, 1, '1 месяц', 199)">
+        <div class="plan-badge">Популярный</div>
+        <div class="plan-header">
+          <div class="plan-name">1 месяц</div>
+          <div class="plan-price">199 ₽</div>
+        </div>
+        <div class="plan-features">
+          <div class="plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Безлимитный трафик</div>
+          <div class="plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>5 устройств</div>
+          <div class="plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>10+ стран</div>
+        </div>
+      </div>
+      
+      <div class="plan-card" onclick="selectPlan(this, 6, '6 месяцев', 999)">
+        <div class="plan-header">
+          <div class="plan-name">6 месяцев</div>
+          <div class="plan-price">999 ₽</div>
+        </div>
+        <div class="plan-features">
+          <div class="plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Всё из 1 месяца</div>
+          <div class="plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Скидка 16%</div>
+          <div class="plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Приоритетная поддержка</div>
+        </div>
+      </div>
+      
+      <div class="plan-card" onclick="selectPlan(this, 12, '12 месяцев', 1799)">
+        <div class="plan-header">
+          <div class="plan-name">12 месяцев</div>
+          <div class="plan-price">1799 ₽</div>
+        </div>
+        <div class="plan-features">
+          <div class="plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Всё из 6 месяцев</div>
+          <div class="plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Скидка 25%</div>
+          <div class="plan-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>VIP поддержка</div>
+        </div>
+      </div>
+      
+      <button class="btn-primary" style="margin-top: 12px;" id="buySubBtn" onclick="openBuySubModal()">
+        Оформить подписку
+      </button>
+    </div>
+    
+    <!-- ПОПОЛНЕНИЕ -->
+    <div class="page" id="page-pay">
+      <div class="page-title">Пополнение</div>
+      
+      <div class="section-title"><div class="section-title-text">Сумма</div></div>
+      <div class="amount-grid" id="amountGrid">
+        <div class="amount-btn" onclick="selectAmount(this, 100)">100 ₽</div>
+        <div class="amount-btn selected" onclick="selectAmount(this, 300)">300 ₽</div>
+        <div class="amount-btn" onclick="selectAmount(this, 500)">500 ₽</div>
+        <div class="amount-btn" onclick="selectAmount(this, 1000)">1000 ₽</div>
+        <div class="amount-btn" onclick="selectAmount(this, 2000)">2000 ₽</div>
+        <div class="amount-btn" onclick="selectAmount(this, 5000)">5000 ₽</div>
+      </div>
+      
+      <div class="section-title"><div class="section-title-text">Способ оплаты</div></div>
+      <div class="pay-grid">
+        <div class="pay-method selected" onclick="selectPayMethod(this, 'stars')">
+          <div class="pay-icon">⭐</div>
+          <div class="pay-name">Telegram Stars</div>
+          <div class="pay-desc">Быстро</div>
+        </div>
+        <div class="pay-method" onclick="selectPayMethod(this, 'card')">
+          <div class="pay-icon">💳</div>
+          <div class="pay-name">Карта / СБП</div>
+          <div class="pay-desc">Platega</div>
+        </div>
+        <div class="pay-method" onclick="selectPayMethod(this, 'crypto')">
+          <div class="pay-icon">₿</div>
+          <div class="pay-name">Крипта</div>
+          <div class="pay-desc">USDT, TON</div>
+        </div>
+        <div class="pay-method" onclick="selectPayMethod(this, 'erip')">
+          <div class="pay-icon">🏦</div>
+          <div class="pay-name">ЕРИП</div>
+          <div class="pay-desc">Беларусь</div>
+        </div>
+      </div>
+      
+      <button class="btn-primary" onclick="makePayment()" id="payBtn">
+        💳 Оплатить 300 ₽
+      </button>
+    </div>
+    
+    <!-- ИСТОРИЯ -->
+    <div class="page" id="page-history">
+      <div class="page-title">История</div>
+      <div id="historyList"></div>
+    </div>
+    
+    <!-- РЕФЕРАЛКА -->
+    <div class="page" id="page-referral">
+      <div class="page-title">Реферальная программа</div>
+      
+      <div class="referral-hero">
+        <div class="referral-hero-content">
+          <div class="referral-hero-icon">👥</div>
+          <div class="referral-hero-title">Приглашай друзей!</div>
+          <div class="referral-hero-text">Получай награду за каждого друга, который оформит подписку</div>
+        </div>
+      </div>
+      
+      <!-- ВЫБОР НАГРАДЫ -->
+      <div class="reward-choice">
+        <div class="reward-title">Что вы хотите получать?</div>
+        <div class="reward-subtitle">Выберите тип награды за приглашённых друзей</div>
+        
+        <div class="reward-options">
+          <div class="reward-option" id="rewardOptionRub" onclick="selectReward('rub')">
+            <div class="reward-option-icon">💰</div>
+            <div class="reward-option-name">50 ₽</div>
+            <div class="reward-option-desc">На баланс</div>
+          </div>
+          <div class="reward-option" id="rewardOptionPercent" onclick="selectReward('percent')">
+            <div class="reward-option-icon">📊</div>
+            <div class="reward-option-name">15%</div>
+            <div class="reward-option-desc">С покупок</div>
+          </div>
+        </div>
+        
+        <div class="reward-warning" id="rewardWarning" style="display: none;">
+          ⚠️ После выбора награду нельзя изменить!<br>Все новые рефералы будут приносить выбранный тип.
+        </div>
+      </div>
+      
+      <!-- ССЫЛКА -->
+      <div class="ref-link-box">
+        <div class="ref-link-label">Ваша реферальная ссылка</div>
+        <div class="ref-link-value" onclick="copyRef()">
+          <span id="refLink">t.me/WebAppVPNbot?start=ref_0</span>
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        </div>
+      </div>
+      
+      <!-- СТАТИСТИКА -->
+      <div class="ref-stats">
+        <div class="ref-stat">
+          <div class="ref-stat-icon">👥</div>
+          <div class="ref-stat-val" id="refCount">0</div>
+          <div class="ref-stat-label">Приглашено</div>
+        </div>
+        <div class="ref-stat">
+          <div class="ref-stat-icon">💰</div>
+          <div class="ref-stat-val" id="refEarned">0 ₽</div>
+          <div class="ref-stat-label">Заработано</div>
+        </div>
+      </div>
+      
+      <div class="section-title"><div class="section-title-text">Мои рефералы</div></div>
+      <div id="refList"></div>
+    </div>
+    
+    <!-- НАСТРОЙКИ -->
+    <div class="page" id="page-settings">
+      <div class="page-title">Настройки</div>
+      
+      <div class="section-title"><div class="section-title-text">Внешний вид</div></div>
+      
+      <div class="setting-item" onclick="toggleTheme()">
+        <div class="setting-label">🌙 Тёмная тема</div>
+        <div class="toggle on" id="themeToggle"></div>
+      </div>
+      
+      <div class="section-title"><div class="section-title-text">Уведомления</div></div>
+      
+      <div class="setting-item" onclick="toggleSetting(this)">
+        <div class="setting-label">🔔 Окончание подписки</div>
+        <div class="toggle on"></div>
+      </div>
+      
+      <div class="setting-item" onclick="toggleSetting(this)">
+        <div class="setting-label">📢 Новости и акции</div>
+        <div class="toggle on"></div>
+      </div>
+      
+      <div class="section-title"><div class="section-title-text">Сброс</div></div>
+      
+      <div class="setting-item" onclick="resetDemo()">
+        <div class="setting-label" style="color: var(--red);">🗑 Сбросить демо-данные</div>
+      </div>
+      
+      <div class="section-title"><div class="section-title-text">О сервисе</div></div>
+      
+      <div class="setting-item">
+        <div class="setting-label">ℹ️ Версия</div>
+        <div style="color: var(--text-secondary); font-size: 13px;">1.0.0 (demo)</div>
+      </div>
+      
+      <div class="setting-item" onclick="showToast('Демо-режим', 'success')">
+        <div class="setting-label">💬 Поддержка</div>
+        <div style="color: var(--text-secondary); font-size: 13px;">@vpn_support</div>
+      </div>
+    </div>
+    
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+      <div class="nav-item active" data-page="page-home" onclick="showPage('page-home', this)">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Главная</span>
+      </div>
+      <div class="nav-item" data-page="page-subs" onclick="showPage('page-subs', this)">
+        <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <span>Ключи</span>
+      </div>
+      <div class="nav-item" data-page="page-pay" onclick="showPage('page-pay', this)">
+        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>Баланс</span>
+      </div>
+      <div class="nav-item" data-page="page-referral" onclick="showPage('page-referral', this)">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        <span>Рефка</span>
+      </div>
+      <div class="nav-item" data-page="page-profile" onclick="showPage('page-profile', this)">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Профиль</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal" id="modalContent"></div>
+  </div>
+  
+  <div class="toast" id="toast"></div>
+  
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) { tg.ready(); tg.expand(); }
+    
+    const BOT_USERNAME = "WebAppVPNbot";
+    
+    // ========== TELEGRAM USER ==========
+    const tgUser = tg?.initDataUnsafe?.user || {
+      id: 12345,
+      first_name: 'Гость',
+      username: 'guest',
+      photo_url: ''
+    };
+    
+    // ========== ДАННЫЕ ==========
+    const DEFAULT_DATA = {
+      balance: 150,
+      subscriptions: [
+        {
+          id: 1,
+          name: "iPhone 15 Pro",
+          plan: "1 месяц",
+          days: 24,
+          totalDays: 30,
+          key: "https://demokey.ru/LMGtfQNMA73RNjbe",
+          created: "10.09.2026",
+          active: true,
+          traffic: "2.3 GB",
+          expiresAt: "05.10.2026"
+        },
+        {
+          id: 2,
+          name: "MacBook Air",
+          plan: "6 месяцев",
+          days: 168,
+          totalDays: 180,
+          key: "https://demokey.ru/QWErty12345678XYZ",
+          created: "01.09.2026",
+          active: true,
+          traffic: "15.7 GB",
+          expiresAt: "28.02.2027"
+        }
+      ],
+      history: [
+        { id: 1, title: "Пополнение баланса", date: "10.09.2026 · 14:23", amount: 300, type: "plus" },
+        { id: 2, title: "Подписка на 1 месяц", date: "10.09.2026 · 14:24", amount: -199, type: "minus" },
+        { id: 3, title: "Пополнение баланса", date: "01.09.2026 · 10:15", amount: 500, type: "plus" },
+        { id: 4, title: "Реферальный бонус", date: "28.08.2026 · 18:42", amount: 50, type: "plus" }
+      ],
+      referral: {
+        type: null, // 'rub' или 'percent'
+        count: 5,
+        earned: 250,
+        list: [
+          { id: 1, name: "Алексей", date: "10.09.2026", reward: 50, type: "rub" },
+          { id: 2, name: "Мария", date: "09.09.2026", reward: 50, type: "rub" },
+          { id: 3, name: "Дмитрий", date: "08.09.2026", reward: 50, type: "rub" },
+          { id: 4, name: "Екатерина", date: "05.09.2026", reward: 50, type: "rub" },
+          { id: 5, name: "Сергей", date: "01.09.2026", reward: 50, type: "rub" }
+        ]
+      },
+      nextId: 3
+    };
+    
+    let DATA = JSON.parse(localStorage.getItem('vpn_demo_data_v2') || JSON.stringify(DEFAULT_DATA));
+    
+    function saveData() {
+      localStorage.setItem('vpn_demo_data_v2', JSON.stringify(DATA));
+    }
+    
+    // ========== СОСТОЯНИЕ ==========
+    let selectedPlan = { months: 1, name: "1 месяц", price: 199 };
+    let selectedAmount = 300;
+    let selectedPayMethod = "stars";
+    
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    function init() {
+      renderProfile();
+      renderAll();
+    }
+    
+    function renderAll() {
+      renderMainStatus();
+      renderBalance();
+      renderStats();
+      renderHomeSubs();
+      renderSubs();
+      renderProfileSubs();
+      renderHistory();
+      renderReferral();
+    }
+    
+    // ========== ПРОФИЛЬ ==========
+    function renderProfile() {
+      const avatarEl = document.getElementById('profileAvatar');
+      const nameEl = document.getElementById('profileName');
+      const usernameEl = document.getElementById('profileUsername');
+      
+      if (tgUser.photo_url) {
+        avatarEl.innerHTML = `<img src="${tgUser.photo_url}" alt="Avatar" onerror="this.parentElement.textContent='${(tgUser.first_name || '?')[0].toUpperCase()}'">`;
+      } else {
+        avatarEl.textContent = (tgUser.first_name || '?')[0].toUpperCase();
+      }
+      
+      nameEl.textContent = tgUser.first_name || 'Пользователь';
+      usernameEl.textContent = tgUser.username ? '@' + tgUser.username : '@guest';
+      
+      document.getElementById('profileStatSubs').textContent = DATA.subscriptions.length;
+      document.getElementById('profileStatDevices').textContent = DATA.subscriptions.filter(s => s.active).length;
+      document.getElementById('profileStatRefs').textContent = DATA.referral.count;
+    }
+    
+    function renderProfileSubs() {
+      const list = document.getElementById('profileSubsList');
+      const active = DATA.subscriptions.filter(s => s.active).slice(0, 2);
+      
+      if (active.length === 0) {
+        list.innerHTML = '<div class="empty"><div class="empty-icon">🔑</div><div class="empty-text">Нет активных подписок</div></div>';
+        return;
+      }
+      
+      list.innerHTML = active.map(s => renderSubCard(s, false)).join('');
+    }
+    
+    // ========== ГЛАВНЫЙ СТАТУС ==========
+    function renderMainStatus() {
+      const activeSubs = DATA.subscriptions.filter(s => s.active && s.days > 0);
+      
+      if (activeSubs.length === 0) {
+        document.getElementById('mainStatusDot').style.background = 'var(--red)';
+        document.getElementById('mainStatusText').textContent = 'Нет активных';
+        document.getElementById('mainStatusText').style.color = 'var(--red)';
+        document.getElementById('mainStatusDays').textContent = '0';
+        document.getElementById('mainStatusLabel').textContent = 'Оформите подписку';
+        document.getElementById('mainStatusBar').style.width = '0%';
+        document.getElementById('mainStatusLeft').textContent = 'Осталось: 0 дней';
+        document.getElementById('mainStatusTotal').textContent = 'Всего: 0';
+        return;
+      }
+      
+      const mainSub = activeSubs.reduce((max, s) => s.days > max.days ? s : max, activeSubs[0]);
+      const pct = Math.min(100, Math.max(0, (mainSub.days / mainSub.totalDays) * 100));
+      
+      document.getElementById('mainStatusDot').style.background = 'var(--green)';
+      document.getElementById('mainStatusText').textContent = 'Активна';
+      document.getElementById('mainStatusText').style.color = 'var(--green)';
+      document.getElementById('mainStatusDays').innerHTML = `${mainSub.days} <span style="font-size: 20px; color: var(--text-secondary);">дней</span>`;
+      document.getElementById('mainStatusLabel').textContent = `Подписка "${mainSub.name}" до ${mainSub.expiresAt}`;
+      document.getElementById('mainStatusBar').style.width = pct + '%';
+      document.getElementById('mainStatusLeft').textContent = `Осталось: ${mainSub.days} дней`;
+      document.getElementById('mainStatusTotal').textContent = `Всего: ${mainSub.totalDays}`;
+    }
+    
+    function renderBalance() {
+      document.getElementById('balanceValue').textContent = DATA.balance + ' ₽';
+    }
+    
+    function renderStats() {
+      document.getElementById('statDevices').textContent = DATA.subscriptions.filter(s => s.active).length;
+      document.getElementById('statSubs').textContent = DATA.subscriptions.length;
+    }
+    
+    // ========== ПОДПИСКИ ==========
+    function renderHomeSubs() {
+      const list = document.getElementById('homeSubsList');
+      const active = DATA.subscriptions.filter(s => s.active).slice(0, 2);
+      
+      if (active.length === 0) {
+        list.innerHTML = '<div class="empty"><div class="empty-icon">🔑</div><div class="empty-text">Нет активных подписок</div><div class="empty-sub">Купите первую подписку</div></div>';
+        return;
+      }
+      
+      list.innerHTML = active.map(s => renderSubCard(s, false)).join('');
+    }
+    
+    function renderSubs() {
+      const list = document.getElementById('subsList');
+      
+      if (DATA.subscriptions.length === 0) {
+        list.innerHTML = '<div class="empty"><div class="empty-icon">🔑</div><div class="empty-text">Подписок нет</div></div>';
+        return;
+      }
+      
+      list.innerHTML = DATA.subscriptions.map(s => renderSubCard(s, true)).join('');
+    }
+    
+    function renderSubCard(s, full) {
+      const daysClass = s.days <= 3 ? 'expiring' : (s.days <= 0 ? 'expired' : '');
+      const daysText = s.days <= 0 ? 'Истекла' : `${s.days} дн.`;
+      const shortKey = s.key.length > 35 ? s.key.slice(0, 35) + '...' : s.key;
+      
+      return `
+        <div class="sub-card" onclick="openSubActions(${s.id})">
+          <div class="sub-header">
+            <div>
+              <div class="sub-name">${s.name}</div>
+              <div class="sub-plan">${s.plan} · ${s.created}</div>
+            </div>
+            <div class="sub-days ${daysClass}">${daysText}</div>
+          </div>
+          <div class="sub-key" onclick="event.stopPropagation(); copyKey('${s.key}')">
+            <span>${shortKey}</span>
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          </div>
+          ${full ? `
+            <div class="sub-actions">
+              <button class="sub-action-btn" onclick="event.stopPropagation(); showQR('${s.key}')">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                QR
+              </button>
+              <button class="sub-action-btn" onclick="event.stopPropagation(); copyKey('${s.key}')">
+                <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                Копировать
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+    
+    function openSubActions(id) {
+      const sub = DATA.subscriptions.find(s => s.id === id);
+      if (!sub) return;
+      
+      haptic();
+      
+      showModal(`
+        <div class="modal-icon">🔑</div>
+        <div class="modal-title">${sub.name}</div>
+        <div class="modal-text">
+          Тариф: ${sub.plan}<br>
+          Осталось: ${sub.days} дней<br>
+          Трафик: ${sub.traffic || '0 GB'}
+        </div>
+        <button class="modal-btn" onclick="renameSub(${id})">📝 Изменить название</button>
+        <button class="modal-btn" onclick="showQR('${sub.key}')">📷 Показать QR</button>
+        <button class="modal-btn" onclick="copyKey('${sub.key}')">📋 Копировать ключ</button>
+        <button class="modal-btn-danger" onclick="deleteSub(${id})">🗑 Удалить подписку</button>
+        <button class="modal-btn-secondary" onclick="closeModal()">Отмена</button>
+      `);
+    }
+    
+    function renameSub(id) {
+      const sub = DATA.subscriptions.find(s => s.id === id);
+      if (!sub) return;
+      
+      showModal(`
+        <div class="modal-icon">📝</div>
+        <div class="modal-title">Переименовать</div>
+        <div class="modal-text">Введите новое название устройства</div>
+        <div class="form-group">
+          <input type="text" class="form-input" id="newSubName" value="${sub.name}" placeholder="iPhone 15 Pro">
+        </div>
+        <button class="modal-btn" onclick="saveNewName(${id})">✅ Сохранить</button>
+        <button class="modal-btn-secondary" onclick="closeModal()">Отмена</button>
+      `);
+      
+      setTimeout(() => document.getElementById('newSubName')?.focus(), 100);
+    }
+    
+    function saveNewName(id) {
+      const input = document.getElementById('newSubName');
+      const newName = input?.value.trim();
+      
+      if (!newName) {
+        showToast('Введите название', 'error');
+        return;
+      }
+      
+      const sub = DATA.subscriptions.find(s => s.id === id);
+      if (sub) {
+        sub.name = newName;
+        saveData();
+        renderAll();
+        closeModal();
+        showToast('✅ Название изменено', 'success');
+        haptic();
+      }
+    }
+    
+    function deleteSub(id) {
+      const sub = DATA.subscriptions.find(s => s.id === id);
+      if (!sub) return;
+      
+      showModal(`
+        <div class="modal-icon">🗑</div>
+        <div class="modal-title">Удалить?</div>
+        <div class="modal-text">Подписка "${sub.name}" будет удалена.</div>
+        <button class="modal-btn-danger" onclick="confirmDeleteSub(${id})">🗑 Удалить</button>
+        <button class="modal-btn-secondary" onclick="closeModal()">Отмена</button>
+      `);
+    }
+    
+    function confirmDeleteSub(id) {
+      DATA.subscriptions = DATA.subscriptions.filter(s => s.id !== id);
+      saveData();
+      renderAll();
+      closeModal();
+      showToast('✅ Подписка удалена', 'success');
+      haptic();
+    }
+    
+    // ========== ВЫБОР ПЛАНА ==========
+    function selectPlan(el, months, name, price) {
+      document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedPlan = { months, name, price };
+      updateBuySubBtn();
+      haptic();
+    }
+    
+    function updateBuySubBtn() {
+      const btn = document.getElementById('buySubBtn');
+      if (btn) btn.textContent = `Купить "${selectedPlan.name}" за ${selectedPlan.price} ₽`;
+    }
+    
+    function openBuySubModal() {
+      haptic();
+      
+      showModal(`
+        <div class="modal-icon">💳</div>
+        <div class="modal-title">Оплата подписки</div>
+        <div class="modal-text">
+          Тариф: <b>${selectedPlan.name}</b><br>
+          Сумма: <b>${selectedPlan.price} ₽</b><br>
+          Баланс: ${DATA.balance} ₽
+        </div>
+        <div class="form-group">
+          <label class="form-label">Название устройства</label>
+          <input type="text" class="form-input" id="deviceName" placeholder="iPhone 15 Pro" value="Новое устройство">
+        </div>
+        ${DATA.balance < selectedPlan.price ? `
+          <div style="background: var(--red-bg); color: var(--red); padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 600; margin-bottom: 16px;">
+            ⚠️ Недостаточно средств. Пополните на ${selectedPlan.price - DATA.balance} ₽
+          </div>
+          <button class="modal-btn" onclick="closeModal(); showPage('page-pay')">💳 Пополнить</button>
+        ` : `
+          <button class="modal-btn" onclick="confirmBuySub()">✅ Оплатить ${selectedPlan.price} ₽</button>
+        `}
+        <button class="modal-btn-secondary" onclick="closeModal()">Отмена</button>
+      `);
+      
+      setTimeout(() => document.getElementById('deviceName')?.focus(), 100);
+    }
+    
+    function confirmBuySub() {
+      const deviceName = document.getElementById('deviceName')?.value.trim() || 'Новое устройство';
+      
+      if (DATA.balance < selectedPlan.price) {
+        showToast('Недостаточно средств', 'error');
+        return;
+      }
+      
+      DATA.balance -= selectedPlan.price;
+      
+      const totalDays = selectedPlan.months * 30;
+      const expires = new Date();
+      expires.setDate(expires.getDate() + totalDays);
+      
+      const newSub = {
+        id: DATA.nextId++,
+        name: deviceName,
+        plan: selectedPlan.name,
+        days: totalDays,
+        totalDays: totalDays,
+        key: `https://demokey.ru/${generateKey()}`,
+        created: new Date().toLocaleDateString('ru-RU'),
+        active: true,
+        traffic: "0 GB",
+        expiresAt: expires.toLocaleDateString('ru-RU')
+      };
+      
+      DATA.subscriptions.push(newSub);
+      
+      DATA.history.unshift({
+        id: DATA.nextId++,
+        title: `Подписка "${selectedPlan.name}"`,
+        date: new Date().toLocaleDateString('ru-RU') + ' · ' + new Date().toTimeString().slice(0, 5),
+        amount: -selectedPlan.price,
+        type: "minus"
+      });
+      
+      // Если выбран % тип рефералки — начисляем процент (в демо)
+      if (DATA.referral.type === 'percent' && DATA.referral.list.length > 0) {
+        // В демо просто показываем что владелец рефки получил бы % — но так как это личный кабинет, не начисляем
+      }
+      
+      saveData();
+      renderAll();
+      closeModal();
+      haptic();
+      
+      showModal(`
+        <div class="modal-icon">🎉</div>
+        <div class="modal-title">Подписка оформлена!</div>
+        <div class="modal-text">
+          Устройство: <b>${deviceName}</b><br>
+          Тариф: ${selectedPlan.name}<br>
+          Дней: ${totalDays}<br>
+          До: ${expires.toLocaleDateString('ru-RU')}
+        </div>
+        <button class="modal-btn" onclick="closeModal(); showPage('page-subs')">📋 Мои подписки</button>
+        <button class="modal-btn-secondary" onclick="closeModal()">Закрыть</button>
+      `);
+      
+      showToast('✅ Подписка активирована!', 'success');
+    }
+    
+    function generateKey() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let result = '';
+      for (let i = 0; i < 16; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+    
+    // ========== ВЫБОР СУММЫ ==========
+    function selectAmount(el, amount) {
+      document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedAmount = amount;
+      updatePayBtn();
+      haptic();
+    }
+    
+    function updatePayBtn() {
+      const btn = document.getElementById('payBtn');
+      if (btn) btn.textContent = `💳 Оплатить ${selectedAmount} ₽`;
+    }
+    
+    function selectPayMethod(el, method) {
+      document.querySelectorAll('.pay-method').forEach(p => p.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedPayMethod = method;
+      haptic();
+    }
+    
+    // ========== ОПЛАТА ==========
+    function makePayment() {
+      haptic();
+      
+      if (selectedPayMethod === 'stars') {
+        showModal(`
+          <div class="modal-icon">⭐</div>
+          <div class="modal-title">Оплата звёздами</div>
+          <div class="modal-text">
+            Сумма: <b>${selectedAmount} ₽</b><br>
+            К оплате: <b>${Math.round(selectedAmount / 1.5)} ⭐</b>
+          </div>
+          <button class="modal-btn" onclick="confirmPayment()">⭐ Оплатить</button>
+          <button class="modal-btn-secondary" onclick="closeModal()">Отмена</button>
+        `);
+      } else if (selectedPayMethod === 'card') {
+        showModal(`
+          <div class="modal-icon">💳</div>
+          <div class="modal-title">Оплата картой</div>
+          <div class="modal-text">Сумма: <b>${selectedAmount} ₽</b></div>
+          <div class="form-group">
+            <label class="form-label">Номер карты</label>
+            <input type="text" class="form-input" placeholder="0000 0000 0000 0000" maxlength="19">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Срок</label>
+            <input type="text" class="form-input" placeholder="MM/YY" maxlength="5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">CVC</label>
+            <input type="text" class="form-input" placeholder="000" maxlength="3">
+          </div>
+          <button class="modal-btn" onclick="confirmPayment()">💳 Оплатить</button>
+          <button class="modal-btn-secondary" onclick="closeModal()">Отмена</button>
+        `);
+      } else if (selectedPayMethod === 'crypto') {
+        showModal(`
+          <div class="modal-icon">₿</div>
+          <div class="modal-title">Оплата криптой</div>
+          <div class="modal-text">Сумма: <b>${selectedAmount} ₽</b> ≈ <b>${(selectedAmount / 90).toFixed(2)} USDT</b></div>
+          <div class="crypto-box">
+            <div class="crypto-label">Кошелёк TRC-20</div>
+            <div class="crypto-address" onclick="copyText('TXYZ1234567890ABCDEF1234567890ABCDEF')">TXYZ1234567890ABCDEF1234567890ABCDEF</div>
+          </div>
+          <button class="modal-btn" onclick="confirmPayment()">✅ Я оплатил</button>
+          <button class="modal-btn-secondary" onclick="closeModal()">Отмена</button>
+        `);
+      } else if (selectedPayMethod === 'erip') {
+        showModal(`
+          <div class="modal-icon">🏦</div>
+          <div class="modal-title">Оплата ЕРИП</div>
+          <div class="modal-text">Сумма: <b>${selectedAmount} ₽</b></div>
+          <div class="crypto-box">
+            <div class="crypto-label">Код платежа</div>
+            <div class="crypto-address" onclick="copyText('VPN-${Math.floor(Math.random() * 1000000)}')">VPN-${Math.floor(Math.random() * 1000000)}</div>
+          </div>
+          <button class="modal-btn" onclick="confirmPayment()">✅ Я оплатил</button>
+          <button class="modal-btn-secondary" onclick="closeModal()">Отмена</button>
+        `);
+      }
+    }
+    
+    function confirmPayment() {
+      DATA.balance += selectedAmount;
+      
+      DATA.history.unshift({
+        id: DATA.nextId++,
+        title: `Пополнение через ${getPayMethodName(selectedPayMethod)}`,
+        date: new Date().toLocaleDateString('ru-RU') + ' · ' + new Date().toTimeString().slice(0, 5),
+        amount: selectedAmount,
+        type: "plus"
+      });
+      
+      saveData();
+      renderAll();
+      closeModal();
+      haptic();
+      showToast(`✅ Баланс пополнен на ${selectedAmount} ₽`, 'success');
+    }
+    
+    function getPayMethodName(m) {
+      const names = {
+        stars: 'Telegram Stars',
+        card: 'карту',
+        crypto: 'крипту',
+        erip: 'ЕРИП'
+      };
+      return names[m] || 'оплату';
+    }
+    
+    // ========== ИСТОРИЯ ==========
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      
+      if (DATA.history.length === 0) {
+        list.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">История пуста</div></div>';
+        return;
+      }
+      
+      list.innerHTML = DATA.history.map(h => `
+        <div class="history-item">
+          <div class="history-info">
+            <div class="history-title">${h.title}</div>
+            <div class="history-date">${h.date}</div>
+          </div>
+          <div class="history-amount ${h.amount < 0 ? 'minus' : ''}">
+            ${h.amount > 0 ? '+' : ''}${h.amount} ₽
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    // ========== РЕФЕРАЛЬНАЯ ПРОГРАММА ==========
+    function renderReferral() {
+      // Ссылка с ID пользователя
+      const refLink = `t.me/${BOT_USERNAME}?start=ref_${tgUser.id}`;
+      document.getElementById('refLink').textContent = refLink;
+      
+      // Статистика
+      document.getElementById('refCount').textContent = DATA.referral.count;
+      document.getElementById('refEarned').textContent = DATA.referral.earned + ' ₽';
+      
+      // Выбор награды
+      const optRub = document.getElementById('rewardOptionRub');
+      const optPercent = document.getElementById('rewardOptionPercent');
+      const warning = document.getElementById('rewardWarning');
+      
+      optRub.classList.remove('selected');
+      optPercent.classList.remove('selected');
+      
+      if (DATA.referral.type === 'rub') {
+        optRub.classList.add('selected');
+        warning.style.display = 'block';
+      } else if (DATA.referral.type === 'percent') {
+        optPercent.classList.add('selected');
+        warning.style.display = 'block';
+      } else {
+        warning.style.display = 'none';
+      }
+      
+      // Список рефералов
+      const refList = document.getElementById('refList');
+      
+      if (DATA.referral.list.length === 0) {
+        refList.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Пока никого</div><div class="empty-sub">Пригласите первого друга</div></div>';
+        return;
+      }
+      
+      refList.innerHTML = DATA.referral.list.map(r => `
+        <div class="ref-item">
+          <div class="ref-item-info">
+            <div class="ref-item-avatar">👤</div>
+            <div>
+              <div class="ref-item-name">${r.name}</div>
+              <div class="ref-item-date">${r.date}</div>
+            </div>
+          </div>
+          <div class="ref-item-reward">+${r.reward} ₽</div>
+        </div>
+      `).join('');
+    }
+    
+    function selectReward(type) {
+      // Если тип уже выбран — нельзя изменить
+      if (DATA.referral.type !== null) {
+        showToast('⚠️ Награду нельзя изменить', 'error');
+        return;
+      }
+      
+      const optionName = type === 'rub' ? '50 ₽ на баланс' : '15% с покупок';
+      
+      showModal(`
+        <div class="modal-icon">${type === 'rub' ? '💰' : '📊'}</div>
+        <div class="modal-title">Выбрать награду?</div>
+        <div class="modal-text">
+          Вы выбрали: <b>${optionName}</b><br><br>
+          <span style="color: var(--yellow); font-weight: 700;">⚠️ После подтверждения награду нельзя изменить!</span><br>
+          Все новые рефералы будут приносить только этот тип.
+        </div>
+        <button class="modal-btn" onclick="confirmReward('${type}')">✅ Подтвердить</button>
+        <button class="modal-btn-secondary" onclick="closeModal()">Отмена</button>
+      `);
+    }
+    
+    function confirmReward(type) {
+      DATA.referral.type = type;
+      saveData();
+      renderReferral();
+      closeModal();
+      haptic();
+      
+      showToast(type === 'rub' ? '✅ Награда: 50 ₽ на баланс' : '✅ Награда: 15% с покупок', 'success');
+    }
+    
+    function copyRef() {
+      const refLink = `https://t.me/${BOT_USERNAME}?start=ref_${tgUser.id}`;
+      copyText(refLink);
+    }
+    
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('✅ Скопировано', 'success');
+        haptic();
+      }).catch(() => {
+        showToast('❌ Ошибка копирования', 'error');
+      });
+    }
+    
+    function copyKey(key) {
+      copyText(key);
+    }
+    
+    // ========== QR ==========
+    function showQR(key) {
+      haptic();
+      const qrData = encodeURIComponent(key);
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
+      
+      showModal(`
+        <div class="modal-icon">📱</div>
+        <div class="modal-title">QR-код ключа</div>
+        <div class="modal-text">Отсканируй в VPN приложении</div>
+        <div class="qr-container">
+          <img src="${qrUrl}" alt="QR" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2ZmZiIvPjxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjUwIiBoZWlnaHQ9IjUwIiBmaWxsPSIjMDAwIi8+PHJlY3QgeD0iMjAiIHk9IjIwIiB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIGZpbGw9IiNmZmYiLz48cmVjdCB4PSIxNDAiIHk9IjEwIiB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIGZpbGw9IiMwMDAiLz48cmVjdCB4PSIxNTAiIHk9IjIwIiB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIGZpbGw9IiNmZmYiLz48cmVjdCB4PSIxMCIgeT0iMTQwIiB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIGZpbGw9IiMwMDAiLz48cmVjdCB4PSIyMCIgeT0iMTUwIiB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIGZpbGw9IiNmZmYiLz48cmVjdCB4PSI3MCIgeT0iNzAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgZmlsbD0iIzAwMCIvPjwvc3ZnPg=='">
+        </div>
+        <button class="modal-btn" onclick="copyKey('${key}')">📋 Копировать</button>
+        <button class="modal-btn-secondary" onclick="closeModal()">Закрыть</button>
+      `);
+    }
+    
+    // ========== МОДАЛКА ==========
+    function showModal(html) {
+      document.getElementById('modalContent').innerHTML = html;
+      document.getElementById('modal').classList.add('active');
+    }
+    
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+    }
+    
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+    
+    // ========== СБРОС ==========
+    function resetDemo() {
+      showModal(`
+        <div class="modal-icon">⚠️</div>
+        <div class="modal-title">Сбросить демо?</div>
+        <div class="modal-text">Все данные вернутся к начальным.</div>
+        <button class="modal-btn-danger" onclick="confirmReset()">🗑 Сбросить</button>
+        <button class="modal-btn-secondary" onclick="closeModal()">Отмена</button>
+      `);
+    }
+    
+    function confirmReset() {
+      localStorage.removeItem('vpn_demo_data_v2');
+      DATA = JSON.parse(JSON.stringify(DEFAULT_DATA));
+      saveData();
+      renderAll();
+      closeModal();
+      showToast('✅ Данные сброшены', 'success');
+      haptic();
+    }
+    
+    // ========== НАВИГАЦИЯ ==========
+    function showPage(pageId, el) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      if (el) el.classList.add('active');
+      else {
+        document.querySelectorAll('.nav-item').forEach(n => {
+          if (n.getAttribute('data-page') === pageId) n.classList.add('active');
+        });
+      }
+      
+      window.scrollTo(0, 0);
+      haptic();
+    }
+    
+    // ========== ТЕМА ==========
+    function toggleTheme() {
+      document.body.classList.toggle('light');
+      const isLight = document.body.classList.contains('light');
+      document.getElementById('themeToggle')?.classList.toggle('on', !isLight);
+      showToast(isLight ? '☀️ Светлая тема' : '🌙 Тёмная тема', 'success');
+      haptic();
+    }
+    
+    function toggleSetting(el) {
+      el.querySelector('.toggle').classList.toggle('on');
+      haptic();
+    }
+    
+    // ========== TOAST ==========
+    function showToast(text, type = '') {
+      const toast = document.getElementById('toast');
+      toast.textContent = text;
+      toast.className = 'toast show ' + type;
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+    
+    // ========== HAPTIC ==========
+    function haptic() {
+      if (tg?.HapticFeedback) {
+        try { tg.HapticFeedback.impactOccurred('light'); } catch(e) {}
+      }
+    }
+    
+    // ========== СТАРТ ==========
+    init();
+    updateBuySubBtn();
+    updatePayBtn();
+  </script>
+</body>
+</html>
